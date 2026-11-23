@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commerce support assistant — architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-dim: #2563eb33;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --code-bg: #0d1117;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    .wrap { max-width: 920px; margin: 0 auto; }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    header .subtitle { color: var(--muted); font-size: 1rem; }
+
+    header .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .badge.accent { background: var(--accent-dim); color: #93c5fd; border-color: #3b82f655; }
+    .badge.yes { background: #22c55e22; color: #86efac; border-color: #22c55e44; }
+    .badge.warn { background: #f59e0b18; color: #fcd34d; border-color: #f59e0b44; }
+
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.35rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    section h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    section h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem;
+      height: 1.6rem;
+      font-size: 0.8rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 1.1rem 0 0.6rem;
+      color: #cbd5e1;
+    }
+
+    p { margin-bottom: 0.75rem; }
+    p.muted { color: var(--muted); font-size: 0.9rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.75rem 0 1rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    code {
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 0.82em;
+      background: var(--code-bg);
+      padding: 0.12em 0.4em;
+      border-radius: 4px;
+      color: #7dd3fc;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      margin: 0.75rem 0 1rem;
+      color: #c9d1d9;
+    }
+
+    pre.flow { color: #a5d6ff; }
+
+    ul, ol { margin: 0.5rem 0 1rem 1.25rem; }
+    li { margin-bottom: 0.35rem; }
+
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-dim);
+      padding: 0.85rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    .callout.warn {
+      border-left-color: var(--amber);
+      background: #f59e0b18;
+    }
+
+    .diagram-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+
+    .arch {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-width: 640px;
+    }
+
+    .arch-row {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .node {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 0.8rem;
+      background: #1e293b;
+      min-width: 108px;
+      text-align: center;
+    }
+
+    .node strong { display: block; font-size: 0.86rem; color: #f8fafc; }
+    .node span { display: block; margin-top: 0.2rem; color: var(--muted); font-size: 0.75rem; line-height: 1.35; }
+    .node.entry { border-color: #3b82f6; }
+    .node.model { border-color: #f59e0b; }
+    .node.policy { border-color: #22c55e; }
+    .node.data { border-color: #93c5fd; background: #172554; }
+    .node.out { border-color: #86efac; }
+
+    .arrow {
+      align-self: center;
+      color: #64748b;
+      font-size: 1.1rem;
+      padding: 0 0.1rem;
+    }
+
+    .vlink {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+
+    .mermaid { text-align: center; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      body { padding: 1rem; }
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .mermaid svg .nodeLabel,
+    .mermaid svg .label text,
+    .mermaid svg foreignObject div,
+    .mermaid svg foreignObject span,
+    .mermaid svg .edgeLabel .label { color: #f8fafc !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Commerce support assistant</h1>
+      <p class="subtitle">Architecture for an authenticated customer message, an order lookup, and a refund ledger the model cannot rewrite.</p>
+      <div class="badge-row">
+        <span class="badge accent">Python</span>
+        <span class="badge accent">FastAPI</span>
+        <span class="badge accent">Pydantic</span>
+        <span class="badge accent">LangGraph</span>
+        <span class="badge yes">Tool calling</span>
+        <span class="badge warn">Mock model</span>
+        <span class="badge">In-memory ledger</span>
+      </div>
+    </header>
+
+    <section>
+      <h2><span class="num">1</span> The job</h2>
+      <p>A customer is already signed in. They send one message. The assistant may describe their order and may record a refund. The amount has to come from the order line.</p>
+      <p>The model is allowed to choose a tool and to write the sentence. It is not allowed to choose the customer, the payable amount, or whether an inaccessible order exists.</p>
+    </section>
+
+    <section>
+      <h2><span class="num">2</span> Architecture</h2>
+      <p class="muted">This drawing is in the page itself. The Mermaid graph below is the same flow, when the diagram script can load.</p>
+      <div class="diagram-box">
+        <div class="arch">
+          <div class="arch-row">
+            <div class="node entry">
+              <strong>Message</strong>
+              <span>authenticated customer id + text</span>
+            </div>
+          </div>
+          <div class="vlink">▼ one LangGraph turn</div>
+          <div class="arch-row">
+            <div class="node model">
+              <strong>interpret</strong>
+              <span>tool calls from the message and open proposals</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node policy">
+              <strong>tools</strong>
+              <span>customer id is bound here</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node policy">
+              <strong>policy</strong>
+              <span>line amount, eligibility, confirm</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node model">
+              <strong>draft</strong>
+              <span>reply from the decision JSON only</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node out">
+              <strong>grounding</strong>
+              <span>drop a reply that adds facts</span>
+            </div>
+          </div>
+          <div class="vlink">tools read the seed · policy writes the ledger</div>
+          <div class="arch-row">
+            <div class="node data">
+              <strong>Seed JSON</strong>
+              <span>customers and orders, read-only</span>
+            </div>
+            <div class="node data">
+              <strong>Runtime lists</strong>
+              <span>proposals, refunds, cases, review queue</span>
+            </div>
+          </div>
+          <div class="vlink">▼ customer channel</div>
+          <div class="arch-row">
+            <div class="node out">
+              <strong>Reply</strong>
+              <span>case id, action, sentence. Debug trace stays on the side.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="diagram-box">
+        <pre class="mermaid">
+flowchart LR
+    In[Authenticated message] --> Interpret[interpret]
+    Interpret -->|tool calls| Tools[tools]
+    Interpret -->|no tools| Policy[policy]
+    Tools --> Policy
+    Policy --> Draft[draft]
+    Draft --> Ground[grounding]
+    Ground --> Out[Customer reply]
+    Tools --> Seed[(Seed orders)]
+    Policy --> Ledger[(Refund ledger)]
+        </pre>
+      </div>
+
+      <h3>One turn</h3>
+      <pre class="flow">1. Bind the authenticated customer id. Drop a customer id if the model sends one.
+2. Planner sees the message and this customer's open proposals. It does not see the catalog.
+3. Tools read one order, or ask the policy to quote or confirm.
+4. Policy recomputes the item, the quantity, the amount, and whether to pay, from the message and the order.
+5. Draft model receives only the decision fields it is allowed to say.
+6. Grounding keeps the draft, or replaces it with a template and stores the draft for review.</pre>
+    </section>
+
+    <section>
+      <h2><span class="num">3</span> Who owns the money</h2>
+      <div class="diagram-box">
+        <pre class="mermaid">
+sequenceDiagram
+    participant Customer
+    participant Model
+    participant Policy
+    participant Ledger
+    Customer->>Model: process a refund, names an amount
+    Model->>Policy: quote_refund hint
+    Policy->>Ledger: line amount and remaining quantity
+    alt amount matches and the line is eligible
+        Policy->>Ledger: one executed refund, idempotency key
+        Policy-->>Customer: submitted, with the reference
+    else amount differs, or they only asked
+        Policy->>Ledger: open proposal
+        Policy-->>Customer: ledger amount, not submitted
+    end
+        </pre>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Situation</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Their order, asking where it is</td><td>Status, plus tracking when the order has it. No ledger row.</td></tr>
+          <tr><td>Delivered, one damaged unit, "can I"</td><td>Proposal for <code>unit_price × quantity</code>. Nothing is submitted.</td></tr>
+          <tr><td>Order id is on another account</td><td>Same answer as a missing order. No item, name, email, or total.</td></tr>
+          <tr><td>Return received, they name a different amount and say process</td><td>Proposal for the line amount. Their figure is repeated and not paid.</td></tr>
+          <tr><td>They confirm that ledger amount</td><td>One executed refund. The same confirmation returns that refund.</td></tr>
+          <tr><td>"yes" with two open proposals</td><td>Ask which amount. No payment.</td></tr>
+          <tr><td>In transit, even if the message says it arrived broken</td><td>No refund. The tracking number is the answer.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        The idempotency key is customer, order, item, quantity, reason, and amount. A second submit with the same key does not create a second refund.
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">4</span> Technologies, and why</h2>
+      <table>
+        <thead>
+          <tr><th>Choice</th><th>Why it is here</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Python</strong></td><td>The support services I ship are Python. The mock, the policy, and the agent stay in one process a reviewer can run.</td></tr>
+          <tr><td><strong>FastAPI</strong></td><td>The brief asks for the simplest local interface. <code>POST /support/messages</code> is that interface. The script calls the same service object, so the HTTP layer is thin.</td></tr>
+          <tr><td><strong>Pydantic</strong></td><td>The planner must return a known hint, and the draft must return <code>{"reply": "..."}</code>. A payload that does not parse is discarded.</td></tr>
+          <tr><td><strong>LangGraph</strong></td><td>The turn is a state graph with one branch: tools were requested, or they were not. That graph is what I would keep when the mock model is replaced. It does not loop.</td></tr>
+          <tr><td><strong>Decimal</strong></td><td>Seed money is parsed from the JSON token and quantized to cents. The payable amount is the line, not a binary float and not the number in the chat.</td></tr>
+          <tr><td><strong>Mock model</strong></td><td>The brief gives no credit for a paid model. <code>MockModel.complete()</code> reads the same messages a live model would read. <code>OpenAICompatibleClient.payload()</code> is the real request, and <code>complete()</code> refuses to send it.</td></tr>
+          <tr><td><strong>In-memory store</strong></td><td>Required. Seed files are opened read-only. Clearing runtime state, or starting a new process, restores them. The mock stores untyped dicts. The refund shape lives in <code>support/ledger.py</code>.</td></tr>
+        </tbody>
+      </table>
+      <h3>Left out on purpose</h3>
+      <table>
+        <thead>
+          <tr><th>Left out</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Vector search</td><td>Four orders are a ledger, not a document corpus. An amount has to be the order line, so the path is a tool, not a retrieved paragraph.</td></tr>
+          <tr><td>PostgreSQL, Redis, Docker, Kubernetes</td><td>The brief requires memory-only state and does not ask for a deployment. Those are the next place the ledger and the proposal TTL would go.</td></tr>
+          <tr><td>A user interface</td><td>The brief says not to spend the time box on one. The script and the one POST route are enough to exercise the agent.</td></tr>
+          <tr><td>A live OpenAI or OpenRouter call</td><td>Same contract, no network. The production path I would add is a primary client and a timeout fallback, both behind <code>ModelClient</code>, with this policy unchanged.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        An older chatbot of mine put the whole catalog in the prompt and let the model filter it. That is a poor fit here: a wrong euro amount would be a payment. The split on this page is the one I use when a number has to come from a verified row.
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">5</span> Where the code sits</h2>
+      <table>
+        <thead>
+          <tr><th>Path</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>commerce_mock/</code></td><td>Seed load, in-memory scratch space, clear.</td></tr>
+          <tr><td><code>support/graph.py</code></td><td>LangGraph nodes and the grounding fallback.</td></tr>
+          <tr><td><code>support/policy.py</code></td><td>Eligibility, item match, amount, confirm. Re-reads the customer message.</td></tr>
+          <tr><td><code>support/ledger.py</code></td><td>Proposal and refund records, idempotency key.</td></tr>
+          <tr><td><code>support/model.py</code></td><td>Mock planner and drafter, plus the disabled live client.</td></tr>
+          <tr><td><code>support/api.py</code></td><td>Local HTTP. The customer payload is the reply. <code>debug</code> is for review.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Take-home architecture for the commerce support assistant. Run <code>python scripts/run_scenarios.py</code> to see the same rules on the supplied messages.
+    </footer>
+  </div>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "loose",
+      themeVariables: {
+        darkMode: true,
+        background: "#0f1419",
+        primaryColor: "#1e293b",
+        primaryTextColor: "#f8fafc",
+        primaryBorderColor: "#475569",
+        lineColor: "#64748b",
+        textColor: "#f8fafc",
+        nodeTextColor: "#f8fafc",
+        clusterBkg: "#1a2332",
+        clusterBorder: "#475569"
+      }
+    });
+  </script>
+</body>
+</html>
